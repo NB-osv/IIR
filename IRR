@@ -1,13 +1,15 @@
 %2.1a
 %Filter 1: ωcT = 0.3π,  ωsT = 0.5π, Amax = 0.1 dB,  Amin = 60 dB
 %%
+clear;
 % Butterworth
 wcT=0.3*pi;
 wsT=0.5*pi;
 Amax=0.1;
 Amin=60;
-wac=tan(wcT/2);
-was=tan(wsT/2);
+T=1;
+wac=(2/T)*tan(wcT/2);
+was=(2/T)*tan(wsT/2);
 
 [N_butterworth,Wn]=buttord(wac,was,Amax,Amin,'s');
 [Z,P,G]=buttap(N_butterworth);
@@ -20,7 +22,7 @@ G=G*w0p^N_butterworth;
 [N_Ch1,Wn]=cheb1ord(wac,was,Amax,Amin,'s');
 [Z,P,G]=cheb1ap(N_Ch1,Amax);
 P=P*wac;
-G=G*wac^N;
+G=G*wac^N_Ch1;
 
 %Chebyshev II
 [N_Ch2,Wn]=cheb2ord(wac,was,Amax,Amin,'s');
@@ -38,19 +40,21 @@ P=P*wac;
 G=G*wac^(length(P)-length(Z));
 
 %%
+clear;
 %Filter 2: ωcT = 0.3π,  ωsT = 0.5π, Amax = 0.01 dB, Amin = 80 dB
 % Butterworth
 wcT=0.3*pi;
 wsT=0.5*pi;
 Amax=0.01;
 Amin=80;
-wac=tan(wcT/2);
-was=tan(wsT/2);
+T=1;
+wac=(2/T)*tan(wcT/2);
+was=(2/T)*tan(wsT/2);
 
 [N_butterworth,Wn]=buttord(wac,was,Amax,Amin,'s');
 [Z,P,G]=buttap(N_butterworth);
 epsilon=sqrt(10^(0.1*Amax)-1);
-w0p=wc*epsilon^(-1/N_butterworth);
+w0p=wac*epsilon^(-1/N_butterworth);
 P=P*w0p;
 G=G*w0p^N_butterworth;
 
@@ -58,7 +62,7 @@ G=G*w0p^N_butterworth;
 [N_Ch1,Wn]=cheb1ord(wac,was,Amax,Amin,'s');
 [Z,P,G]=cheb1ap(N_Ch1,Amax);
 P=P*wac;
-G=G*wac^N;
+G=G*wac^N_Ch1;
 
 %Chebyshev II
 [N_Ch2,Wn]=cheb2ord(wac,was,Amax,Amin,'s');
@@ -76,19 +80,21 @@ P=P*wac;
 G=G*wac^(length(P)-length(Z));
 
 %%
+clear;
 %Filter 3: ωcT = 0.45π, ωsT = 0.5π, Amax = 0.1 dB,  Amin = 60 dB
 % Butterworth
 wcT=0.45*pi;
 wsT=0.5*pi;
+T=1;
 Amax=0.1;
 Amin=60;
-wac=tan(wcT/2);
-was=tan(wsT/2);
+wac=(2/T)*tan(wcT/2);
+was=(2/T)*tan(wsT/2);
 
 [N_butterworth,Wn]=buttord(wac,was,Amax,Amin,'s');
 [Z,P,G]=buttap(N_butterworth);
 epsilon=sqrt(10^(0.1*Amax)-1);
-w0p=wc*epsilon^(-1/N_butterworth);
+w0p=wac*epsilon^(-1/N_butterworth);
 P=P*w0p;
 G=G*w0p^N_butterworth;
 
@@ -96,7 +102,7 @@ G=G*w0p^N_butterworth;
 [N_Ch1,Wn]=cheb1ord(wac,was,Amax,Amin,'s');
 [Z,P,G]=cheb1ap(N_Ch1,Amax);
 P=P*wac;
-G=G*wac^N;
+G=G*wac^N_Ch1;
 
 %Chebyshev II
 [N_Ch2,Wn]=cheb2ord(wac,was,Amax,Amin,'s');
@@ -106,13 +112,13 @@ P=P*was;
 G=G*was^(length(P)-length(Z));
 
 %Cauer
-
 [N_Cauer,Wn]=ellipord(wac,was,Amax,Amin,'s');
 [Z,P,G]=ellipap(N_Cauer,Amax,Amin);
 Z=Z*wac;
 P=P*wac;
 G=G*wac^(length(P)-length(Z));
 %%
+clear;
 % 2.1b
 wcT=0.3*pi;
 wsT=0.5*pi;
@@ -161,3 +167,174 @@ ylabel('\tau_g(\omega) [T]');
 
 zplane(Z, P);
 zplane(Za, Pa);
+
+%%
+clear;
+%2.2
+%Filter 1: Highpass filter with the specification ωcT = 0.75π, ωsT = 0.5π, Amax = 0.1 dB, Amin = 60 dB
+
+wcT=0.75*pi;
+wsT=0.5*pi;
+Amax=0.1;
+Amin=60;
+T=1;
+wac=(2/T)*tan(wcT/2);
+was=(2/T)*tan(wsT/2);
+
+% Requirements for the corresponding lowpass filter
+wclp=wac;
+wslp=wac^2/was;
+
+% Synthesis of the lowpass filter (Cauer)
+[Nlp,Wn]= ellipord(wclp,wslp,Amax,Amin,'s');
+Nlp
+[Zlp,Plp,Glp]=ellipap(Nlp,Amax,Amin);
+Zlp=Zlp*wac;
+Plp=Plp*wac;
+Glp=Glp*wac^(length(Plp)-length(Zlp));
+
+% Transformation of the lowpass filter into the highpass filter
+[Za, Pa]=zp2hp(Zlp,Plp,wac^2);
+N=Nlp
+Za=Za
+Pa=Pa
+Ga=1
+
+%Transformation of the analog filter into the discrete-time filter
+[Z,P,G] = bilinear(Za,Pa,Ga,1/T);
+
+% Computation of the magnitude response 
+wT = linspace(0,pi,5000);
+[N,D] = zp2tf(Z,P,G);
+[H,wT] = freqz(N,D,wT);
+magdB = 20*log10(abs(H));
+
+% Plot of the magnitude response
+
+figure;
+plot(wT*180/pi,magdB);
+axis([0 180 -100 10]);
+set(gca,'FontName','times','FontSize',16)
+ylabel('|H(e^j^\omega^T)| [dB]');
+
+%zplane(Z, P);
+%zplane(Za, Pa);
+%%
+clear;
+%Filter 2: Bandpass filter with the specification:
+% ωc1T = 0.4π, ωc2T = 0.6π, ωs1T = 0.3π, ωs2T = 0.7π, Amax = 0.1 dB, Amin = 60 dB
+wcT1=0.4*pi;
+wcT2=0.6*pi;
+wsT1=0.3*pi;
+wsT2=0.7*pi;
+Amax=0.1;
+Amin=60;
+T=1;
+wac1=(2/T)*tan(wcT1/2);
+wac2=(2/T)*tan(wcT2/2);
+was1=(2/T)*tan(wsT1/2);
+was2=(2/T)*tan(wsT2/2);
+
+if wac1*wac2~=was1*was2
+    was1=wac1*wac2/was2; %Öka was1
+end
+
+% Requirements for the corresponding lowpass filter
+wclp=wac2-wac1;
+wslp=was2-was1;
+wi2=wac1*wac2;
+
+% Synthesis of the lowpass filter (Cauer)
+[Nlp,Wn]= ellipord(wclp,wslp,Amax,Amin,'s');
+Nlp
+[Zlp,Plp,Glp]=ellipap(Nlp,Amax,Amin);
+Zlp=Zlp*wclp;
+Plp=Plp*wclp;
+Glp=Glp*wclp^(length(Plp)-length(Zlp));
+
+% Transformation of the lowpass filter into the bandpass filter
+[Za, Pa]=zp2bp(Zlp,Plp,wi2);
+N=2*Nlp
+Za=Za
+Pa=Pa
+Ga=Glp
+
+%Transformation of the analog filter into the discrete-time filter
+[Z,P,G] = bilinear(Za,Pa,Ga,1/T);
+
+% Computation of the magnitude response 
+wT = linspace(0,pi,5000);
+[N,D] = zp2tf(Z,P,G);
+[H,wT] = freqz(N,D,wT);
+magdB = 20*log10(abs(H));
+
+% Plot of the magnitude response
+
+figure;
+plot(wT*180/pi,magdB);
+%axis([0 180 -100 10]);
+set(gca,'FontName','times','FontSize',16)
+ylabel('|H(e^j^\omega^T)| [dB]');
+
+%zplane(Z, P);
+%zplane(Za, Pa);
+%%
+clear;
+%Filter 3: Bandstop filter with the specification
+%ωc1T = 0.3π, ωc2T = 0.7π, ωs1T = 0.4π, ωs2T=0.6π, Amax = 0.1 dB, Amin = 60 dB
+wcT1=0.3*pi;
+wcT2=0.7*pi;
+wsT1=0.4*pi;
+wsT2=0.6*pi;
+Amax=0.1;
+Amin=60;
+T=1;
+wac1=(2/T)*tan(wcT1/2);
+wac2=(2/T)*tan(wcT2/2);
+was1=(2/T)*tan(wsT1/2);
+was2=(2/T)*tan(wsT2/2);
+
+if wac1*wac2~=was1*was2
+    wac1=was1*was2/wac2; %Öka wac1
+end
+
+% Requirements for the corresponding lowpass filter
+wi2=wac1*wac2;
+wclp=wi2/(wac2-wac1);
+wslp=wi2/(was2-was1);
+
+% Synthesis of the lowpass filter (Cauer)
+[Nlp,Wn]= ellipord(wclp,wslp,Amax,Amin,'s');
+[Zlp,Plp,Glp]=ellipap(Nlp,Amax,Amin);
+Nlp
+
+Zlp=Zlp*wclp;
+Plp=Plp*wclp;
+Glp=Glp*wclp^(length(Plp)-length(Zlp));
+
+% Transformation of the lowpass filter into the bandstop filter
+[Za, Pa]=zp2bs(Zlp,Plp,wi2);
+N=2*Nlp
+Za=Za
+Pa=Pa
+Ga=1
+
+%Transformation of the analog filter into the discrete-time filter
+[Z,P,G] = bilinear(Za,Pa,Ga,1/T);
+
+% Computation of the magnitude response 
+wT = linspace(0,pi,5000);
+[N,D] = zp2tf(Z,P,G);
+[H,wT] = freqz(N,D,wT);
+magdB = 20*log10(abs(H));
+
+% Plot of the magnitude response
+
+figure;
+plot(wT*180/pi,magdB);
+%axis([0 180 -100 10]);
+set(gca,'FontName','times','FontSize',16)
+ylabel('|H(e^j^\omega^T)| [dB]');
+
+%zplane(Z, P);
+%zplane(Za, Pa);
